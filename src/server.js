@@ -62,7 +62,9 @@ const server = new ApolloServer({
   resolvers,
   context: ({ req }) => ({
     user: req.user
-  })
+  }),
+  playground: true,
+  introspection: true,
 });
 
 async function startServer() {
