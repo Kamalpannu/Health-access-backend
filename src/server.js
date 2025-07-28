@@ -30,17 +30,6 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Add CI/CD test route
-app.get('/ci-test', (req, res) => {
-  res.send('CI/CD test successful at ' + new Date().toISOString());
-});
-
-// Add version route to track deploy versions
-app.get('/version', (req, res) => {
-  res.send('Backend Version: 1.0.3'); // Change version string on each test deploy
-});
-
-// Your existing auth routes
 app.get('/auth/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
 );
@@ -67,41 +56,20 @@ app.get('/auth/failure', (req, res) => {
   res.status(401).send('Google login failed.');
 });
 
-// Modify typeDefs and resolvers to add a simple test query for GraphQL
-const { gql } = require('apollo-server-express');
-
-// Extend your existing typeDefs and resolvers here
-const testTypeDefs = gql`
-  extend type Query {
-    hello: String
-  }
-`;
-
-const testResolvers = {
-  Query: {
-    hello: () => "Hello from CI/CD test!"
-  }
-};
-
-// Combine your existing typeDefs and resolvers with the test ones
-const combinedTypeDefs = [typeDefs, testTypeDefs];
-const combinedResolvers = [resolvers, testResolvers];
 
 const server = new ApolloServer({
-  typeDefs: combinedTypeDefs,
-  resolvers: combinedResolvers,
+  typeDefs,
+  resolvers,
   context: ({ req }) => ({
     user: req.user
   }),
-  playground: true,
-  introspection: true,
 });
 
 async function startServer() {
   await server.start();
   server.applyMiddleware({ app,
     cors: false
-  });
+   });
 
   const PORT = process.env.PORT || 4000;
   http.createServer(app).listen(PORT, () => {
