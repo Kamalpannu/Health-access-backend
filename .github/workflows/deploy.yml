@@ -23,7 +23,7 @@ jobs:
       - name: SSH and deploy
         run: |
           ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            cd /home/ubuntu/Mediledger-backend
+            cd /home/ubuntu/Health-access-backend
             git pull origin main
             npm install
             pm2 restart all || pm2 start src/server.js
