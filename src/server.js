@@ -73,7 +73,7 @@ async function startServer() {
   server.applyMiddleware({ app, cors: false });
 
   const PORT = process.env.PORT || 4000;
-  http.createServer(app).listen(PORT, () => {
+  http.createServer(app).listen(PORT,'0.0.0.0', () => {
     console.log(`Server running at http://localhost:${PORT}${server.graphqlPath}`);
   });
 }
