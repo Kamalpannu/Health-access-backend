@@ -8,8 +8,12 @@ const { passport } = require('./auth');
 const typeDefs = require('./graphql/typeDefs');
 const resolvers = require('./graphql/resolvers');
 const cors = require('cors');
+const path = require('path'); // <-- Needed for static file path
 
 const app = express();
+
+// Serve static files from /src/public
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(cors({
   origin: process.env.FRONTEND_URL,
@@ -56,7 +60,6 @@ app.get('/auth/failure', (req, res) => {
   res.status(401).send('Google login failed.');
 });
 
-
 const server = new ApolloServer({
   typeDefs,
   resolvers,
@@ -67,9 +70,7 @@ const server = new ApolloServer({
 
 async function startServer() {
   await server.start();
-  server.applyMiddleware({ app,
-    cors: false
-   });
+  server.applyMiddleware({ app, cors: false });
 
   const PORT = process.env.PORT || 4000;
   http.createServer(app).listen(PORT, () => {
