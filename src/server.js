@@ -29,7 +29,9 @@ app.use(session({
   cookie: {
     secure: true,
     httpOnly: true,      
-    sameSite: 'none'    
+    sameSite: 'none',
+    maxAge: 24 * 60 * 60 * 1000,
+    domain: '.preetkamal.xyz'   
   }
 }));
 
@@ -42,12 +44,12 @@ app.get('/auth/google',
 
 app.get('/auth/google/callback',
   passport.authenticate('google', {
-    failureRedirect: '/auth/failure',
+    failureRedirect: `${process.env.FRONTEND_URL}/login?error=oauth_failed`,
     session: true
   }),
   (req, res) => {
     console.log('User authenticated:', req.user);
-    res.redirect(process.env.FRONTEND_URL || 'http://localhost:5173');
+    res.redirect(`${process.env.FRONTEND_URL}?login=success`);
   }
 );
 
@@ -61,7 +63,16 @@ app.get('/logout', (req, res, next) => {
   });
 });
 app.get('/auth/failure', (req, res) => {
-  res.status(401).send('Google login failed.');
+  res.redirect(`${process.env.FRONTEND_URL}/login?error=oauth_failed`);
+});
+app.get('/auth/debug', (req, res) => {
+  res.json({
+    user: req.user,
+    session: req.session,
+    isAuthenticated: req.isAuthenticated(),
+    cookies: req.cookies,
+    headers: req.headers
+  });
 });
 const server = new ApolloServer({
   typeDefs,
