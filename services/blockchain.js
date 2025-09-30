@@ -5,7 +5,6 @@ const CONTRACT_ABI = require("../contracts/HealthAccessABI.json");
 
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
 const RPC_URL = process.env.BLOCKCHAIN_RPC_URL;
-console.log("RPC_URL:", RPC_URL);
 
 // Setup provider & signer
 const provider = new ethers.JsonRpcProvider(RPC_URL);
