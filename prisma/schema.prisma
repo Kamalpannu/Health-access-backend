@@ -60,7 +60,7 @@ model Patient {
 model Record {
   id          String   @id @default(uuid())
   title       String
-  content     String
+  cid         String
   diagnosis   String?
   treatment   String?
   medications String?
