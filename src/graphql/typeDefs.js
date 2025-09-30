@@ -49,7 +49,7 @@ module.exports = gql`
   type Record {
     id: ID!
     title: String!
-    content: String!
+    cid: String!
     diagnosis: String
     treatment: String
     medications: String
@@ -160,7 +160,7 @@ module.exports = gql`
     treatment: String
     medications: String
     notes: String
-    patientId: ID
+    patientId: ID!
   }
 
   input UpdateRecordInput {

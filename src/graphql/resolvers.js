@@ -1,6 +1,8 @@
 const prisma = require('../prismaClient');
 const { requireAuth, requireRole } = require('../auth');
 const GraphQLJSON = require('graphql-type-json');
+const blockchainService = require('../../services/blockchain');
+const pinataService = require('../../services/pinata');
 
 function toISO(obj) {
   return {
@@ -182,41 +184,82 @@ module.exports = {
       return toISO(updated);
     },
 
-    createRecord: async (_, { input }, { user }) => {
-      requireRole(user, 'DOCTOR');
-      const doctor = await prisma.doctor.findUnique({ where: { userId: user.id } });
-      if (!doctor) {
-        doctor = await prisma.doctor.create({
-          data: { userId: user.id }
-        });
-      }
-      const access = await prisma.accessRequest.findFirst({
-        where: {
-          doctorId: doctor.id,
-          patientId: input.patientId,
-          status: 'APPROVED'
-        }
-      });
-      if (!access) {
-        throw new Error('Access denied: Doctor does not have approved access to this patient.');
-      }
-      const record = await prisma.record.create({
-        data: {
-          title: input.title,
-          content: input.content,
-          diagnosis: input.diagnosis,
-          treatment: input.treatment,
-          medications: input.medications,
-          notes: input.notes,
-          patientId: input.patientId,
-          doctorId: doctor.id
-        },
-        include: {
-          doctor: { include: { user: true } },
-          patient: { include: { user: true } }
-        }
-      });
-      return toISO(record);
+createRecord: async (_, { input }, { user }) => {
+  requireRole(user, 'DOCTOR');
+
+  let doctor = await prisma.doctor.findUnique({ where: { userId: user.id } });
+  if (!doctor) {
+    doctor = await prisma.doctor.create({
+      data: { userId: user.id }
+    });
+  }
+
+  const access = await prisma.accessRequest.findFirst({
+    where: {
+      doctorId: doctor.id,
+      patientId: input.patientId,
+      status: 'APPROVED'
+    }
+  });
+
+  if (!access) {
+    throw new Error('Access denied: Doctor does not have approved access to this patient.');
+  }
+  const now = new Date().toISOString();
+  const pinResult = await pinataService.pinJSON({
+    title: input.title,
+    content: input.content,
+    diagnosis: input.diagnosis,
+    treatment: input.treatment,
+    medications: input.medications,
+    notes: input.notes,
+    patientId: input.patientId,
+    doctorId: doctor.id,
+    createdAt: now,
+    updatedAt: now
+  });
+
+  if (!pinResult.success) {
+    throw new Error("Pinata upload failed: " + pinResult.error);
+  }
+
+  const ipfsHash = pinResult.hash;
+
+    const record = await prisma.record.create({
+    data: {
+      title: input.title,
+      cid: ipfsHash, // ✅ Store CID instead of raw content
+      diagnosis: input.diagnosis,
+      treatment: input.treatment,
+      medications: input.medications,
+      notes: input.notes,
+      patientId: input.patientId,
+      doctorId: doctor.id
+    },
+    include: {
+      doctor: { include: { user: true } },
+      patient: { include: { user: true } }
+    }
+  });
+
+  try {
+    const blockchainResult = await blockchainService.createRecord(
+      record.patient.userId,
+      ipfsHash
+    );
+
+    if (!blockchainResult.success) {
+      console.error("Blockchain transaction failed:", blockchainResult.error);
+      throw new Error("Blockchain transaction failed: " + blockchainResult.error);
+    }
+
+    console.log("Blockchain record created:", blockchainResult.txHash);
+  } catch (error) {
+    console.error("Error storing record on blockchain:", error);
+    throw new Error("Blockchain storage failed");
+  }
+
+  return toISO(record);
 },
 
 
