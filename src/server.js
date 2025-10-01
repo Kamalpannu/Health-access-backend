@@ -13,6 +13,8 @@ const path = require('path');
 const app = express();
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+console.log("PRIVATE_KEY:", process.env.PRIVATE_KEY);
+console.log("BLOCKCHAIN_RPC_URL:", process.env.BLOCKCHAIN_RPC_URL);
 
 app.set('trust proxy', 1);
 
