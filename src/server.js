@@ -13,8 +13,7 @@ const path = require('path');
 const app = express();
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
-console.log("PRIVATE_KEY length:", process.env.PRIVATE_KEY.length);
-console.log("PRIVATE_KEY startsWith 0x:", process.env.PRIVATE_KEY.startsWith("0x"));
+
 
 
 app.set('trust proxy', 1);
