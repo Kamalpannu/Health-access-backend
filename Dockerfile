@@ -2,16 +2,16 @@ FROM node:18
 
 WORKDIR /app
 
-# Copy package files and install dependencies
+# Install deps
 COPY package.json package-lock.json ./
 RUN npm install
 
-# Copy prisma schema and generate client
+# Copy prisma and generate client
 COPY prisma ./prisma
 RUN npx prisma generate
 
-# Copy the rest of the app
-COPY src ./src
+# Copy the rest of the project (including services folder and src)
+COPY . .
 
-# Start the app
+# Start app
 CMD ["npm", "start"]
