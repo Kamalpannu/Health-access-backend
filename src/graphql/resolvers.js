@@ -228,7 +228,7 @@ createRecord: async (_, { input }, { user }) => {
     const record = await prisma.record.create({
     data: {
       title: input.title,
-      cid: ipfsHash, // ✅ Store CID instead of raw content
+      cid: ipfsHash,
       diagnosis: input.diagnosis,
       treatment: input.treatment,
       medications: input.medications,
@@ -238,13 +238,13 @@ createRecord: async (_, { input }, { user }) => {
     },
     include: {
       doctor: { include: { user: true } },
-      patient: { include: { user: true } }
+      patient: { select: { ethereumAddress: true, id: true, user: true } }
     }
   });
 
   try {
     const blockchainResult = await blockchainService.createRecord(
-      record.patient.userId,
+      record.patient.ethereumAddress,
       ipfsHash
     );
 

@@ -44,6 +44,7 @@ model Patient {
   id             String   @id @default(uuid())
   userId         String   @unique
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ethereumAddress String?
   dateOfBirth    DateTime?
   phoneNumber    String?
   address        String?

@@ -33,6 +33,7 @@ module.exports = gql`
     id: ID!
     userId: ID!
     user: User!
+    ethereumAddress: String
     dateOfBirth: String
     phoneNumber: String
     address: String
@@ -134,6 +135,7 @@ module.exports = gql`
   }
 
   input PatientInput {
+    ethereumAddress: String!
     dateOfBirth: String
     phoneNumber: String
     address: String
