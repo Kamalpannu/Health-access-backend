@@ -109,6 +109,7 @@ module.exports = gql`
     updateRecord(input: UpdateRecordInput!): Record!
     deleteRecord(id: ID!): Boolean!
     setUserRole(role: Role!, data: JSON): Boolean!
+    updateEthereumAddress(ethereumAddress: String!): Patient!
   }
 
   input CreateUserInput {

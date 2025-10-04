@@ -150,6 +150,7 @@ module.exports = {
       return toISO(updatedUser);
     },
 
+
     createAccessRequest: async (_, { input }, { user }) => {
       requireRole(user, 'DOCTOR');
       const doctor = await prisma.doctor.findUnique({ where: { userId: user.id } });
@@ -351,6 +352,14 @@ createRecord: async (_, { input }, { user }) => {
         });
       }
       return true;
+    },
+    updateEthereumAddress: async (_, { ethereumAddress }, { user }) => {
+      requireRole(user, "PATIENT");
+      const updatedPatient = await prisma.patient.update({
+        where: { userId: user.id },
+        data: { ethereumAddress }
+      });
+      return toISO(updatedPatient);
     }
   }
 };
