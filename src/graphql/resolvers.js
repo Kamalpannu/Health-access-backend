@@ -317,20 +317,39 @@ createRecord: async (_, { input }, { user }) => {
       await prisma.record.delete({ where: { id } });
       return true;
     },
-
     setUserRole: async (_, { role, data }, { user }) => {
       requireAuth(user);
       if (!['DOCTOR', 'PATIENT'].includes(role)) throw new Error('Invalid role');
-
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          role,
-          Doctor: role === 'DOCTOR' ? { create: data } : undefined,
-          Patient: role === 'PATIENT' ? { create: data } : undefined
+      if (role === 'PATIENT') {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            role: 'PATIENT',
+            Patient: {
+              connectOrCreate: {
+                where: { userId: user.id },
+                create: {
+                  ethereumAddress: data?.ethereumAddress || null
+                
+                }
+              }
+            }
+          }
+        });
+      } else if (role === 'DOCTOR') {
+        const existingDoctor = await prisma.doctor.findUnique({
+          where: { userId: user.id }
+        });
+        if (!existingDoctor) {
+          await prisma.doctor.create({
+            data: { userId: user.id }
+          });
         }
-      });
-
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { role: 'DOCTOR' }
+        });
+      }
       return true;
     }
   }
