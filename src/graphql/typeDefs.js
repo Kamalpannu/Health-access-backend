@@ -46,11 +46,18 @@ module.exports = gql`
     createdAt: String!
     updatedAt: String!
   }
+  enum SyncStatus {
+    PENDING
+    SYNCED
+    FAILED
+  }
 
   type Record {
     id: ID!
     title: String!
     cid: String!
+    blockchainTx: String    
+    syncStatus: SyncStatus 
     diagnosis: String
     treatment: String
     medications: String

@@ -62,6 +62,8 @@ model Record {
   id          String   @id @default(uuid())
   title       String
   cid         String
+  blockchainTx  String?
+  syncStatus    String   @default("PENDING")
   diagnosis   String?
   treatment   String?
   medications String?

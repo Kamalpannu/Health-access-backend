@@ -196,9 +196,7 @@ createRecord: async (_, { input }, { user }) => {
 
   let doctor = await prisma.doctor.findUnique({ where: { userId: user.id } });
   if (!doctor) {
-    doctor = await prisma.doctor.create({
-      data: { userId: user.id }
-    });
+    doctor = await prisma.doctor.create({ data: { userId: user.id } });
   }
 
   const access = await prisma.accessRequest.findFirst({
@@ -212,7 +210,10 @@ createRecord: async (_, { input }, { user }) => {
   if (!access) {
     throw new Error('Access denied: Doctor does not have approved access to this patient.');
   }
+
   const now = new Date().toISOString();
+
+  // 1️⃣ Upload to IPFS via Pinata
   const pinResult = await pinataService.pinJSON({
     title: input.title,
     content: input.content,
@@ -232,7 +233,8 @@ createRecord: async (_, { input }, { user }) => {
 
   const ipfsHash = pinResult.hash;
 
-    const record = await prisma.record.create({
+  // 2️⃣ Create record in DB with syncStatus = "PENDING"
+  let record = await prisma.record.create({
     data: {
       title: input.title,
       cid: ipfsHash,
@@ -241,7 +243,8 @@ createRecord: async (_, { input }, { user }) => {
       medications: input.medications,
       notes: input.notes,
       patientId: input.patientId,
-      doctorId: doctor.id
+      doctorId: doctor.id,
+      syncStatus: "PENDING"
     },
     include: {
       doctor: { include: { user: true } },
@@ -249,6 +252,7 @@ createRecord: async (_, { input }, { user }) => {
     }
   });
 
+  // 3️⃣ Try saving to blockchain
   try {
     const blockchainResult = await blockchainService.createRecord(
       record.patient.ethereumAddress,
@@ -257,12 +261,34 @@ createRecord: async (_, { input }, { user }) => {
 
     if (!blockchainResult.success) {
       console.error("Blockchain transaction failed:", blockchainResult.error);
+      await prisma.record.update({
+        where: { id: record.id },
+        data: { syncStatus: "FAILED" }
+      });
       throw new Error("Blockchain transaction failed: " + blockchainResult.error);
     }
 
     console.log("Blockchain record created:", blockchainResult.txHash);
+
+    // 4️⃣ Update record with tx hash + mark as SYNCED
+    record = await prisma.record.update({
+      where: { id: record.id },
+      data: {
+        blockchainTx: blockchainResult.txHash,
+        syncStatus: "SYNCED"
+      },
+      include: {
+        doctor: { include: { user: true } },
+        patient: { select: { ethereumAddress: true, id: true, user: true } }
+      }
+    });
+
   } catch (error) {
     console.error("Error storing record on blockchain:", error);
+    await prisma.record.update({
+      where: { id: record.id },
+      data: { syncStatus: "FAILED" }
+    });
     throw new Error("Blockchain storage failed");
   }
 
