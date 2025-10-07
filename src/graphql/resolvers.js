@@ -85,7 +85,10 @@ module.exports = {
         include: {
           accessRequests: {
             where: { status: 'PENDING' },
-            include: { doctor: { include: { user: true } } }
+            include: {
+              doctor: { include: { user: true } },
+              patient: { include: { user: true } }
+            }
           }
         }
       });
