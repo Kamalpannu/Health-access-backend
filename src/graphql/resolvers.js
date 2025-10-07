@@ -55,7 +55,10 @@ module.exports = {
         where: { userId: user.id },
         include: {
           records: {
-            include: { doctor: { include: { user: true } } }
+            include:{
+              doctor: { include: { user: true } },
+              patient: { include: { user: true } }              
+            }
           }
         }
       });
